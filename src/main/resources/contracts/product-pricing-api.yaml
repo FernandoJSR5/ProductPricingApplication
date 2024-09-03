@@ -1,0 +1,95 @@
+openapi: 3.0.0
+info:
+  title: Product Pricing API
+  version: 1.0.0
+  description: API for querying applicable prices for products in a retail chain.
+
+servers:
+  - url: http://localhost:8080/api
+
+paths:
+  /prices/applicable:
+    get:
+      summary: Get applicable price for a product
+      description: |
+        Retrieves the applicable price for a product in a retail chain based on the provided application date.
+      parameters:
+        - name: applicationDate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+          description: The date and time when the price is applicable (e.g., '2024-08-26T15:00:00').
+        - name: productId
+          in: query
+          required: true
+          schema:
+            type: integer
+          description: The ID of the product.
+        - name: brandId
+          in: query
+          required: true
+          schema:
+            type: integer
+          description: The ID of the brand.
+      responses:
+        '200':
+          description: Applicable price found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PriceResponse'
+        '404':
+          description: No applicable price found for the provided parameters
+        '400':
+          description: Invalid input parameters
+      operationId: getApplicablePrice
+
+components:
+  schemas:
+    Price:
+      type: object
+      properties:
+        priceList:
+          type: integer
+          description: The ID of the applicable price list.
+        startDate:
+          type: string
+          format: date-time
+          description: The start date of the price's validity.
+        endDate:
+          type: string
+          format: date-time
+          description: The end date of the price's validity.
+        price:
+          type: number
+          format: double
+          description: The final price to apply.
+        currency:
+          type: string
+          description: The currency code (e.g., 'EUR').
+        priority:
+          type: integer
+          description: Priority of the price list when multiple prices overlap.
+        brandId:
+          type: integer
+          description: The ID of the brand (e.g., 1 for ZARA).
+
+    Brand:
+      type: object
+      properties:
+        brandId:
+          type: integer
+          description: The ID of the brand (e.g., 1 for ZARA).
+        brandName:
+          type: string
+          description: The name of the brand (e.g., ZARA).
+
+    PriceResponse:
+      type: object
+      properties:
+        price:
+          $ref: '#/components/schemas/Price'
+        brand:
+          $ref: '#/components/schemas/Brand'

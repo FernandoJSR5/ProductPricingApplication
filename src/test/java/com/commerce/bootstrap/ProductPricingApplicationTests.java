@@ -1,4 +1,4 @@
-package com.commerce.productpricing;
+package com.commerce.bootstrap;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
