@@ -6,11 +6,16 @@ import com.commerce.domain.model.PriceResponse;
 import com.commerce.driving.controllers.mappers.PriceResponseMapper;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import java.time.OffsetDateTime;
 
+/**
+ * The type Price controller adapter.
+ */
 @RestController
+@RequestMapping("/api/v1")
 @AllArgsConstructor
 public class PriceControllerAdapter implements PricesApi {
 
@@ -19,10 +24,10 @@ public class PriceControllerAdapter implements PricesApi {
 
     @Override
     public ResponseEntity<PriceResponse> getApplicablePrice(@RequestParam("applicationDate") OffsetDateTime applicationDate,
-                                                            @RequestParam("productId") Integer productId,
-                                                            @RequestParam("brandId") Integer brandId) {
+                                                            @RequestParam("productId") Long productId,
+                                                            @RequestParam("brandId") Long brandId) {
 
-        var response = priceServicePort.getApplicablePrice(productId, brandId, applicationDate);
+        var response = priceServicePort.getApplicablePrice(productId, brandId, applicationDate.toLocalDateTime());
 
         return ResponseEntity.ok(priceResponseMapper.mapListPriceApiToPriceResponse(response));
 

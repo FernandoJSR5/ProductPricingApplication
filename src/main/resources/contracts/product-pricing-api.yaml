@@ -5,7 +5,7 @@ info:
   description: API for querying applicable prices for products in a retail chain.
 
 servers:
-  - url: http://localhost:8080/api
+  - url: http://localhost:8080/api/v1
 
 paths:
   /prices/applicable:
@@ -26,12 +26,14 @@ paths:
           required: true
           schema:
             type: integer
+            format: int64
           description: The ID of the product.
         - name: brandId
           in: query
           required: true
           schema:
             type: integer
+            format: int64
           description: The ID of the brand.
       responses:
         '200':
@@ -51,8 +53,13 @@ components:
     Price:
       type: object
       properties:
+        productId:
+          type: integer
+          format: int64
+          description: The ID of the product code.
         priceList:
           type: integer
+          format: int64
           description: The ID of the applicable price list.
         startDate:
           type: string
@@ -69,11 +76,9 @@ components:
         currency:
           type: string
           description: The currency code (e.g., 'EUR').
-        priority:
-          type: integer
-          description: Priority of the price list when multiple prices overlap.
         brandId:
           type: integer
+          format: int64
           description: The ID of the brand (e.g., 1 for ZARA).
 
     Brand:
@@ -81,6 +86,7 @@ components:
       properties:
         brandId:
           type: integer
+          format: int64
           description: The ID of the brand (e.g., 1 for ZARA).
         brandName:
           type: string

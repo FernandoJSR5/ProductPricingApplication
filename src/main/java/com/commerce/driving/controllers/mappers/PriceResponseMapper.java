@@ -5,45 +5,40 @@ import com.commerce.domain.model.Brand;
 import com.commerce.domain.model.Price;
 import com.commerce.domain.model.PriceResponse;
 import org.springframework.stereotype.Component;
-import org.springframework.util.CollectionUtils;
 
-import java.util.Comparator;
-import java.util.List;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 
+/**
+ * The type Price response mapper.
+ */
 @Component
 public class PriceResponseMapper {
 
+    /**
+     * Map list price api to price response price response.
+     *
+     * @param priceApi the price api
+     * @return the price response
+     */
     public PriceResponse mapListPriceApiToPriceResponse(PriceApi priceApi) {
         var price = Price.builder()
+                .productId(priceApi.getProductId())
                 .priceList(priceApi.getPriceList())
-                .startDate(priceApi.getStartDate())
-                .endDate(priceApi.getEndDate())
+                .startDate(OffsetDateTime.of(priceApi.getStartDate(), ZoneOffset.UTC))
+                .endDate(OffsetDateTime.of(priceApi.getEndDate(), ZoneOffset.UTC))
                 .price(priceApi.getPrice())
                 .currency(priceApi.getCurrency())
-                .priority(priceApi.getPriority())
-                .brandId(priceApi.getBrandId())
+                .brandId(priceApi.getBrand().getBrandId())
                 .build();
 
-        var brand = getBrandById(priceApi.getBrandId());
-
         return PriceResponse.builder()
-                .brand(brand)
+                .brand(Brand.builder()
+                        .brandId(priceApi.getBrand().getBrandId())
+                        .brandName(priceApi.getBrand().getBrandName())
+                        .build())
                 .price(price)
                 .build();
 
-    }
-
-    private Brand getBrandById(Integer brandId) {
-        return Brand.builder()
-                .brandId(brandId)
-                .brandName(getBrandNameById(brandId))
-                .build();
-    }
-
-    private String getBrandNameById(Integer brandId) {
-        switch (brandId) {
-            case 1: return "ZARA";
-            default: return "ZARA HOME";
-        }
     }
 }
