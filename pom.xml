@@ -140,6 +140,7 @@
                                 <additionalModelTypeAnnotations>
                                     @lombok.Data
                                     @lombok.Builder
+                                    @lombok.AllArgsConstructor
                                 </additionalModelTypeAnnotations>
                             </configOptions>
                         </configuration>

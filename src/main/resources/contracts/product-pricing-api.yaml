@@ -44,8 +44,16 @@ paths:
                 $ref: '#/components/schemas/PriceResponse'
         '404':
           description: No applicable price found for the provided parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '400':
           description: Invalid input parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
       operationId: getApplicablePrice
 
 components:
@@ -99,3 +107,13 @@ components:
           $ref: '#/components/schemas/Price'
         brand:
           $ref: '#/components/schemas/Brand'
+
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: A descriptive message explaining the error.
+        errorCode:
+          type: string
+          description: A code representing the type of error.

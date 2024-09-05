@@ -1,13 +1,14 @@
 package com.commerce.driven.repositories.adapters;
 
+import com.commerce.application.exceptions.PriceException;
 import com.commerce.application.ports.driven.PriceRepositoryPort;
 import com.commerce.domain.api.PriceApi;
+import com.commerce.domain.model.PriceConstants;
 import com.commerce.driven.repositories.PriceMORepository;
 import com.commerce.driven.repositories.mappers.PriceApiMapper;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.util.CollectionUtils;
 
 import java.time.LocalDateTime;
 
@@ -27,9 +28,9 @@ public class PriceRepositoryAdapter implements PriceRepositoryPort {
         var pricesMO = priceMORepository.
                 findApplicablePrices(
                         brandId, productId, applicationDate);
-        if(CollectionUtils.isEmpty(pricesMO)) {
-            return PriceApi.empty();
+        if(!pricesMO.isEmpty()) {
+            return priceApiMapper.mapPriceMOToPriceApi(pricesMO.get(0));
         }
-        return priceApiMapper.mapPriceMOToPriceApi(pricesMO.get(0));
+        throw new PriceException(PriceConstants.ERROR_NOT_FOUND, PriceConstants.ERROR_CODE_NOT_FOUND);
     }
 }
