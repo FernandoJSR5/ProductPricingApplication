@@ -1,9 +1,7 @@
 package com.commerce.driving.controllers.adapters;
 
 import com.commerce.application.ports.driving.PriceServicePort;
-import com.commerce.domain.api.PriceApi;
-import com.commerce.domain.model.Brand;
-import com.commerce.domain.model.Price;
+import com.commerce.domain.entities.Price;
 import com.commerce.domain.model.PriceResponse;
 import com.commerce.driving.controllers.mappers.PriceResponseMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,7 +22,7 @@ import static org.mockito.Mockito.when;
  * The type Price controller adapter unit test.
  */
 @ExtendWith(SpringExtension.class)
-public class PriceControllerAdapterUnitTest {
+class PriceControllerAdapterUnitTest {
 
     private PriceControllerAdapter priceControllerAdapter;
 
@@ -47,14 +45,14 @@ public class PriceControllerAdapterUnitTest {
      * Test get applicable price.
      */
     @Test
-    public void testGetApplicablePrice() {
+    void testGetApplicablePrice() {
         OffsetDateTime applicationDate = OffsetDateTime.parse("2020-06-14T10:00:00Z");
         Long productId = 35455L;
         Long brandId = 1L;
 
-        PriceApi priceApi = PriceApi.builder()
+        Price price = Price.builder()
                 .productId(productId)
-                .brand(Brand.builder().brandId(brandId).brandName("ZARA").build())
+                .brandId(brandId)
                 .startDate(LocalDateTime.parse("2020-06-14T00:00:00"))
                 .endDate(LocalDateTime.parse("2020-12-31T23:59:59"))
                 .priceList(1L)
@@ -63,23 +61,19 @@ public class PriceControllerAdapterUnitTest {
                 .build();
 
         PriceResponse priceResponse = PriceResponse.builder()
-                .brand(Brand.builder()
-                        .brandId(priceApi.getBrand().getBrandId())
-                        .brandName(priceApi.getBrand().getBrandName())
-                        .build())
-                .price(Price.builder()
-                        .productId(priceApi.getProductId())
-                        .priceList(priceApi.getPriceList())
-                        .startDate(OffsetDateTime.of(priceApi.getStartDate(), ZoneOffset.UTC))
-                        .endDate(OffsetDateTime.of(priceApi.getEndDate(), ZoneOffset.UTC))
-                        .price(priceApi.getPrice())
-                        .currency(priceApi.getCurrency())
-                        .brandId(priceApi.getBrand().getBrandId())
+                .price(com.commerce.domain.model.Price.builder()
+                        .productId(price.getProductId())
+                        .priceList(price.getPriceList())
+                        .startDate(OffsetDateTime.of(price.getStartDate(), ZoneOffset.UTC))
+                        .endDate(OffsetDateTime.of(price.getEndDate(), ZoneOffset.UTC))
+                        .price(price.getPrice())
+                        .currency(price.getCurrency())
+                        .brandId(price.getBrandId())
                         .build())
                 .build();
 
-        when(priceServicePort.getApplicablePrice(productId, brandId, applicationDate.toLocalDateTime())).thenReturn(priceApi);
-        when(priceResponseMapper.mapListPriceApiToPriceResponse(priceApi)).thenReturn(priceResponse);
+        when(priceServicePort.getApplicablePrice(productId, brandId, applicationDate.toLocalDateTime())).thenReturn(price);
+        when(priceResponseMapper.mapListPriceToPriceResponse(price)).thenReturn(priceResponse);
 
         ResponseEntity<PriceResponse> responseEntity = priceControllerAdapter.getApplicablePrice(applicationDate, productId, brandId);
 

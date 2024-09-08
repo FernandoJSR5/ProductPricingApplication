@@ -89,24 +89,11 @@ components:
           format: int64
           description: The ID of the brand (e.g., 1 for ZARA).
 
-    Brand:
-      type: object
-      properties:
-        brandId:
-          type: integer
-          format: int64
-          description: The ID of the brand (e.g., 1 for ZARA).
-        brandName:
-          type: string
-          description: The name of the brand (e.g., ZARA).
-
     PriceResponse:
       type: object
       properties:
         price:
           $ref: '#/components/schemas/Price'
-        brand:
-          $ref: '#/components/schemas/Brand'
 
     ErrorResponse:
       type: object

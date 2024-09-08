@@ -1,8 +1,6 @@
 package com.commerce.driving.controllers.mappers;
 
-import com.commerce.domain.api.PriceApi;
-import com.commerce.domain.model.Brand;
-import com.commerce.domain.model.Price;
+import com.commerce.domain.entities.Price;
 import com.commerce.domain.model.PriceResponse;
 import org.springframework.stereotype.Component;
 
@@ -18,26 +16,20 @@ public class PriceResponseMapper {
     /**
      * Map list price api to price response price response.
      *
-     * @param priceApi the price api
+     * @param price the price
      * @return the price response
      */
-    public PriceResponse mapListPriceApiToPriceResponse(PriceApi priceApi) {
-        var price = Price.builder()
-                .productId(priceApi.getProductId())
-                .priceList(priceApi.getPriceList())
-                .startDate(OffsetDateTime.of(priceApi.getStartDate(), ZoneOffset.UTC))
-                .endDate(OffsetDateTime.of(priceApi.getEndDate(), ZoneOffset.UTC))
-                .price(priceApi.getPrice())
-                .currency(priceApi.getCurrency())
-                .brandId(priceApi.getBrand().getBrandId())
-                .build();
-
+    public PriceResponse mapListPriceToPriceResponse(Price price) {
         return PriceResponse.builder()
-                .brand(Brand.builder()
-                        .brandId(priceApi.getBrand().getBrandId())
-                        .brandName(priceApi.getBrand().getBrandName())
+                .price(com.commerce.domain.model.Price.builder()
+                        .productId(price.getProductId())
+                        .priceList(price.getPriceList())
+                        .startDate(OffsetDateTime.of(price.getStartDate(), ZoneOffset.UTC))
+                        .endDate(OffsetDateTime.of(price.getEndDate(), ZoneOffset.UTC))
+                        .price(price.getPrice())
+                        .currency(price.getCurrency())
+                        .brandId(price.getBrandId())
                         .build())
-                .price(price)
                 .build();
 
     }

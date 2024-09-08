@@ -1,35 +1,32 @@
 package com.commerce.driven.repositories.mappers;
 
-import com.commerce.domain.api.PriceApi;
-import com.commerce.domain.model.Brand;
+import com.commerce.domain.entities.Price;
 import com.commerce.driven.repositories.models.PriceMO;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 
 /**
- * The type Price api mapper.
+ * The type Price mapper.
  */
 @Component
 @AllArgsConstructor
-public class PriceApiMapper {
+public class PriceMapper {
     /**
-     * Map price mo to price api price api.
+     * Map price mo to price.
      *
      * @param priceMO the price mo
-     * @return the price api
+     * @return the price
      */
-    public PriceApi mapPriceMOToPriceApi(PriceMO priceMO) {
-        return PriceApi.builder()
+    public Price mapPriceMOToPrice(PriceMO priceMO) {
+        return Price.builder()
                 .productId(priceMO.getProductId())
-                .brand(Brand.builder()
-                        .brandId(priceMO.getBrand().getId())
-                        .brandName(priceMO.getBrand().getBrandName())
-                        .build())
                 .priceList(priceMO.getPriceList())
                 .startDate(priceMO.getStartDate())
                 .endDate(priceMO.getEndDate())
                 .price(priceMO.getPrice())
+                .priority(priceMO.getPriority())
                 .currency(priceMO.getCurrency())
+                .brandId(priceMO.getBrand().getId())
                 .build();
     }
 }

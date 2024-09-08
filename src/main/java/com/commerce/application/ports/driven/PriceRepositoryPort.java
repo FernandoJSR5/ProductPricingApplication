@@ -1,8 +1,9 @@
 package com.commerce.application.ports.driven;
 
-import com.commerce.domain.api.PriceApi;
+import com.commerce.domain.entities.Price;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * The interface Price repository port.
@@ -10,12 +11,12 @@ import java.time.LocalDateTime;
 public interface PriceRepositoryPort {
 
     /**
-     * Gets price.
+     * Gets prices.
      *
      * @param productId       the product id
      * @param brandId         the brand id
      * @param applicationDate the application date
-     * @return the price
+     * @return the prices
      */
-    PriceApi getPrice(Long productId, Long brandId, LocalDateTime applicationDate);
+    List<Price> getPrices(Long productId, Long brandId, LocalDateTime applicationDate);
 }

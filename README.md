@@ -56,7 +56,7 @@ Additionally, the following test cases were provided to validate the service:
 
 The project is organized into the following layers:
 
-- **Domain**: Contains domain entities and core business logic. Key classes include `Price` and `PriceApi`.
+- **Domain**: Contains domain entities and core business logic. Key classes include `Price` model and `Price` entity.
 - **Application**: Defines application services and interfaces. This layer includes:
    - `PriceServicePort`: An interface for business operations related to pricing.
    - `PriceRepositoryPort`: An interface for data access, implemented in the `driven` layer.

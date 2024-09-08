@@ -1,6 +1,6 @@
 package com.commerce.application.ports.driving;
 
-import com.commerce.domain.api.PriceApi;
+import com.commerce.domain.entities.Price;
 
 import java.time.LocalDateTime;
 
@@ -17,6 +17,6 @@ public interface PriceServicePort {
      * @param applicationDate the application date
      * @return the applicable price
      */
-    PriceApi getApplicablePrice(Long productId, Long brandId, LocalDateTime applicationDate);
+    Price getApplicablePrice(Long productId, Long brandId, LocalDateTime applicationDate);
 
 }

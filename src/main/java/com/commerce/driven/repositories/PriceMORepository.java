@@ -13,7 +13,7 @@ import java.util.List;
 public interface PriceMORepository extends JpaRepository<PriceMO, Long> {
 
     /**
-     * Find by brand id and product id and start date less than equal and end date greater than equal order by priority desc list.
+     * Find by brand id and product id and start date less than equal and end date greater than equal list.
      *
      * @param brandId   the brand id
      * @param productId the product id
@@ -21,7 +21,7 @@ public interface PriceMORepository extends JpaRepository<PriceMO, Long> {
      * @param endDate   the end date
      * @return the list
      */
-    List<PriceMO> findByBrandIdAndProductIdAndStartDateLessThanEqualAndEndDateGreaterThanEqualOrderByPriorityDesc(
+    List<PriceMO> findByBrandIdAndProductIdAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
             @Param("brandId") Long brandId,
             @Param("productId") Long productId,
             @Param("startDate") LocalDateTime startDate,
@@ -40,7 +40,7 @@ public interface PriceMORepository extends JpaRepository<PriceMO, Long> {
             Long productId,
             LocalDateTime applicationDate) {
 
-        return findByBrandIdAndProductIdAndStartDateLessThanEqualAndEndDateGreaterThanEqualOrderByPriorityDesc(
+        return findByBrandIdAndProductIdAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
                 brandId,
                 productId,
                 applicationDate,

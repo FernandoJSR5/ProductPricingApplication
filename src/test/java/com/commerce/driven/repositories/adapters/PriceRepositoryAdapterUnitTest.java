@@ -1,11 +1,8 @@
 package com.commerce.driven.repositories.adapters;
 
-import com.commerce.application.exceptions.PriceException;
-import com.commerce.domain.api.PriceApi;
-import com.commerce.domain.model.Brand;
-import com.commerce.domain.model.PriceConstants;
+import com.commerce.domain.entities.Price;
 import com.commerce.driven.repositories.PriceMORepository;
-import com.commerce.driven.repositories.mappers.PriceApiMapper;
+import com.commerce.driven.repositories.mappers.PriceMapper;
 import com.commerce.driven.repositories.models.BrandMO;
 import com.commerce.driven.repositories.models.PriceMO;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,17 +12,16 @@ import org.mockito.Mock;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.time.LocalDateTime;
-import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * The type Price repository adapter test.
+ * The type Price repository adapter unit test.
  */
 @ExtendWith(SpringExtension.class)
-public class PriceRepositoryAdapterUnitTest {
+class PriceRepositoryAdapterUnitTest {
 
     private PriceRepositoryAdapter priceRepositoryAdapter;
 
@@ -33,7 +29,7 @@ public class PriceRepositoryAdapterUnitTest {
     private PriceMORepository priceMORepository;
 
     @Mock
-    private PriceApiMapper priceApiMapper;
+    private PriceMapper priceMapper;
 
     private LocalDateTime applicationDate;
 
@@ -42,15 +38,15 @@ public class PriceRepositoryAdapterUnitTest {
      */
     @BeforeEach
     void setUp() {
-        priceRepositoryAdapter = new PriceRepositoryAdapter(priceMORepository, priceApiMapper);
+        priceRepositoryAdapter = new PriceRepositoryAdapter(priceMORepository, priceMapper);
         applicationDate = LocalDateTime.of(2020, 6, 14, 10, 0);
     }
 
     /**
-     * Test get price when price exists.
+     * Test get prices from repository returns mapped prices.
      */
     @Test
-    public void testGetPriceWhenPriceExists() {
+    void testGetPricesFromRepositoryReturnsMappedPrices() {
 
         var priceMO = PriceMO.builder()
                 .productId(35455L)
@@ -59,49 +55,31 @@ public class PriceRepositoryAdapterUnitTest {
                 .endDate(LocalDateTime.parse("2020-12-31T23:59:59"))
                 .priceList(1L)
                 .price(35.5)
+                .priority(0)
                 .currency("EUR")
                 .build();
 
-        var priceApi = PriceApi.builder()
+        var price = Price.builder()
                 .productId(35455L)
-                .brand(Brand.builder().brandId(1L).brandName("ZARA").build())
+                .brandId(1L)
                 .startDate(LocalDateTime.parse("2020-06-14T00:00:00"))
                 .endDate(LocalDateTime.parse("2020-12-31T23:59:59"))
                 .priceList(1L)
                 .price(35.5)
+                .priority(0)
                 .currency("EUR")
                 .build();
 
         when(priceMORepository.findApplicablePrices(1L, 35455L, applicationDate))
                 .thenReturn(List.of(priceMO));
-        when(priceApiMapper.mapPriceMOToPriceApi(priceMO))
-                .thenReturn(priceApi);
+        when(priceMapper.mapPriceMOToPrice(priceMO))
+                .thenReturn(price);
 
-        var result = priceRepositoryAdapter.getPrice(35455L, 1L, applicationDate);
+        var result = priceRepositoryAdapter.getPrices(35455L, 1L, applicationDate);
 
-        assertNotNull(result);
-        assertEquals(priceApi, result);
-
+        assertEquals(1, result.size());
+        assertEquals(price, result.get(0));
         verify(priceMORepository, times(1)).findApplicablePrices(1L, 35455L, applicationDate);
-        verify(priceApiMapper, times(1)).mapPriceMOToPriceApi(priceMO);
-    }
-
-    /**
-     * Test get price when price does not exist.
-     */
-    @Test
-    public void testGetPriceWhenPriceDoesNotExist() {
-
-        when(priceMORepository.findApplicablePrices(1L, 35455L, applicationDate))
-                .thenReturn(Collections.emptyList());
-
-        PriceException exception = assertThrows(PriceException.class, () -> {
-            priceRepositoryAdapter.getPrice(35455L, 1L, applicationDate);
-        });
-
-        assertEquals(PriceConstants.ERROR_NOT_FOUND, exception.getMessage());
-
-        verify(priceMORepository, times(1)).findApplicablePrices(1L, 35455L, applicationDate);
-        verify(priceApiMapper, never()).mapPriceMOToPriceApi(any());
+        verify(priceMapper, times(1)).mapPriceMOToPrice(priceMO);
     }
 }

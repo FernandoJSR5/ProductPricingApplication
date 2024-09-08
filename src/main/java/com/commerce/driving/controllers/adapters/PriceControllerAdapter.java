@@ -29,7 +29,7 @@ public class PriceControllerAdapter implements PricesApi {
 
         var response = priceServicePort.getApplicablePrice(productId, brandId, applicationDate.toLocalDateTime());
 
-        return ResponseEntity.ok(priceResponseMapper.mapListPriceApiToPriceResponse(response));
+        return ResponseEntity.ok(priceResponseMapper.mapListPriceToPriceResponse(response));
 
     }
 }
