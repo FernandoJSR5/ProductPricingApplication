@@ -25,12 +25,9 @@ public class PriceServiceUseCase implements PriceServicePort {
     @Override
     public Price getApplicablePrice(Long productId, Long brandId, LocalDateTime applicationDate) {
         var prices = priceRepositoryPort.getPrices(productId, brandId, applicationDate);
-        if (prices.isEmpty()) {
-            throw new PriceException(PriceConstants.ERROR_NOT_FOUND, PriceConstants.ERROR_CODE_NOT_FOUND);
-        }
 
         return prices.stream().max(Comparator.comparing(Price::getPriority)).orElseThrow(() ->
-                new PriceException("Could not find the price with the highest priority.",
+                new PriceException(PriceConstants.ERROR_NOT_FOUND,
                         PriceConstants.ERROR_CODE_NOT_FOUND));
     }
 }

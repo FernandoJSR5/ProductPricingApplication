@@ -27,7 +27,8 @@ public class PriceRepositoryAdapter implements PriceRepositoryPort {
     @Override
     public List<Price> getPrices(Long productId, Long brandId, LocalDateTime applicationDate) {
         var pricesMO = priceMORepository.
-                findApplicablePrices(brandId, productId, applicationDate);
+                findByBrandIdAndProductIdAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                        brandId, productId, applicationDate, applicationDate);
 
         return pricesMO.stream().map(priceMapper::mapPriceMOToPrice).collect(toList());
 

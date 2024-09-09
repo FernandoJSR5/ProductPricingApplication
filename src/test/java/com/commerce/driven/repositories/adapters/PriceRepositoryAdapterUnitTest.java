@@ -70,7 +70,8 @@ class PriceRepositoryAdapterUnitTest {
                 .currency("EUR")
                 .build();
 
-        when(priceMORepository.findApplicablePrices(1L, 35455L, applicationDate))
+        when(priceMORepository.findByBrandIdAndProductIdAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                1L, 35455L, applicationDate, applicationDate))
                 .thenReturn(List.of(priceMO));
         when(priceMapper.mapPriceMOToPrice(priceMO))
                 .thenReturn(price);
@@ -79,7 +80,9 @@ class PriceRepositoryAdapterUnitTest {
 
         assertEquals(1, result.size());
         assertEquals(price, result.get(0));
-        verify(priceMORepository, times(1)).findApplicablePrices(1L, 35455L, applicationDate);
+        verify(priceMORepository, times(1)).
+                findByBrandIdAndProductIdAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                        1L, 35455L, applicationDate, applicationDate);
         verify(priceMapper, times(1)).mapPriceMOToPrice(priceMO);
     }
 }
