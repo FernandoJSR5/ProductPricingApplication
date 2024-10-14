@@ -8,12 +8,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
@@ -72,10 +72,12 @@ class PriceControllerAdapterUnitTest {
                         .build())
                 .build();
 
-        when(priceServicePort.getApplicablePrice(productId, brandId, applicationDate.toLocalDateTime())).thenReturn(price);
+        when(priceServicePort.getApplicablePrice(productId, brandId, applicationDate.toLocalDateTime())).thenReturn(CompletableFuture.completedFuture(price));
         when(priceResponseMapper.mapListPriceToPriceResponse(price)).thenReturn(priceResponse);
 
-        ResponseEntity<PriceResponse> responseEntity = priceControllerAdapter.getApplicablePrice(applicationDate, productId, brandId);
+        var responseEntityFuture = priceControllerAdapter.getApplicablePrice(applicationDate, productId, brandId);
+
+        var responseEntity = responseEntityFuture.join();
 
         assertEquals(priceResponse, responseEntity.getBody());
     }

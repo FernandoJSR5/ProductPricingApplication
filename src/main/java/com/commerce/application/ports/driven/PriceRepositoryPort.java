@@ -4,6 +4,7 @@ import com.commerce.domain.entities.Price;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * The interface Price repository port.
@@ -18,5 +19,5 @@ public interface PriceRepositoryPort {
      * @param applicationDate the application date
      * @return the prices
      */
-    List<Price> getPrices(Long productId, Long brandId, LocalDateTime applicationDate);
+    CompletableFuture<List<Price>> getPrices(Long productId, Long brandId, LocalDateTime applicationDate);
 }

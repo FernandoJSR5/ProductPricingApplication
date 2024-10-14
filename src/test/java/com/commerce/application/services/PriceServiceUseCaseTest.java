@@ -1,42 +1,40 @@
 package com.commerce.application.services;
 
-import com.commerce.application.exceptions.PriceException;
+import com.commerce.common.enums.CommonErrorCodes;
+import com.commerce.common.exceptions.FallbackPriceException;
+import com.commerce.common.exceptions.PriceException;
 import com.commerce.application.ports.driven.PriceRepositoryPort;
-import com.commerce.application.ports.driving.PriceServicePort;
 import com.commerce.domain.entities.Price;
-import com.commerce.domain.model.PriceConstants;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.*;
 
 /**
  * The type Price service use case test.
  */
-@ExtendWith(SpringExtension.class)
+@SpringBootTest
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class PriceServiceUseCaseTest {
-    private PriceServicePort priceServicePort;
+    @Autowired
+    private PriceServiceUseCase priceServiceUseCase;
 
-    @Mock
+    @MockBean
     private PriceRepositoryPort priceRepositoryPort;
 
     /**
-     * Before.
-     */
-    @BeforeEach
-    public void before() {
-        priceServicePort = new PriceServiceUseCase(priceRepositoryPort);
-    }
-
-    /**
-     * Test get applicable price selects price with the highest priority.
+     * Test get applicable price selects price with highest priority.
      */
     @Test
     void testGetApplicablePrice_SelectsPriceWithHighestPriority() {
@@ -52,9 +50,9 @@ class PriceServiceUseCaseTest {
         price2.setPrice(25.45);
 
         when(priceRepositoryPort.getPrices(35455L, 1L, applicationDate))
-                .thenReturn(List.of(price1, price2));
+                .thenReturn(CompletableFuture.completedFuture(List.of(price1, price2)));
 
-        var result = priceServicePort.getApplicablePrice(35455L, 1L, applicationDate);
+        var result = priceServiceUseCase.getApplicablePrice(35455L, 1L, applicationDate).join();
 
         assertNotNull(result);
         assertEquals(price2, result);
@@ -70,9 +68,9 @@ class PriceServiceUseCaseTest {
         var price = getPrice();
 
         when(priceRepositoryPort.getPrices(35455L, 1L, applicationDate))
-                .thenReturn(List.of(price));
+                .thenReturn(CompletableFuture.completedFuture(List.of(price)));
 
-        var result = priceServicePort.getApplicablePrice(35455L, 1L, applicationDate);
+        var result = priceServiceUseCase.getApplicablePrice(35455L, 1L, applicationDate).join();
 
         assertNotNull(result);
         assertEquals(price, result);
@@ -86,13 +84,35 @@ class PriceServiceUseCaseTest {
         var applicationDate = LocalDateTime.of(2020, 6, 14, 10, 0);
 
         when(priceRepositoryPort.getPrices(35455L, 1L, applicationDate))
-                .thenReturn(List.of());
+                .thenReturn(CompletableFuture.completedFuture(List.of()));
 
-        var exception = assertThrows(PriceException.class, () -> {
-            priceServicePort.getApplicablePrice(35455L, 1L, applicationDate);
-        });
+        var exception = assertThrows(CompletionException.class, () ->
+            priceServiceUseCase.getApplicablePrice(35455L, 1L, applicationDate).join());
 
-        assertEquals(PriceConstants.ERROR_NOT_FOUND, exception.getMessage());
+        Throwable cause = exception.getCause();
+        assertTrue(cause instanceof PriceException);
+        assertEquals(CommonErrorCodes.NOT_FOUND.getCode(), ((PriceException) cause).getErrorCode());
+    }
+
+
+    /**
+     * Test circuit breaker fallback.
+     */
+    @Test
+    void testCircuitBreakerFallback() {
+        Long productId = 35455L;
+        Long brandId = 1L;
+        var applicationDate = LocalDateTime.of(2020, 6, 14, 10, 0);
+
+        when(priceRepositoryPort.getPrices(anyLong(), anyLong(), any()))
+                .thenReturn(CompletableFuture.failedFuture(new RuntimeException("Database connection error")));
+
+        var exception = assertThrows(CompletionException.class, () ->
+            priceServiceUseCase.getApplicablePrice(productId, brandId, applicationDate).join());
+
+        Throwable cause = exception.getCause();
+        assertTrue(cause instanceof FallbackPriceException);
+        assertEquals(CommonErrorCodes.FALLBACK.getCode(), ((FallbackPriceException) cause).getErrorCode());
     }
 
     private Price getPrice() {

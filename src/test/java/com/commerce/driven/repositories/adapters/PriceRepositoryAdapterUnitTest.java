@@ -7,12 +7,14 @@ import com.commerce.driven.repositories.models.BrandMO;
 import com.commerce.driven.repositories.models.PriceMO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.concurrent.CompletionException;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -20,15 +22,26 @@ import static org.mockito.Mockito.*;
 /**
  * The type Price repository adapter unit test.
  */
-@ExtendWith(SpringExtension.class)
+@SpringBootTest
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class PriceRepositoryAdapterUnitTest {
 
-    private PriceRepositoryAdapter priceRepositoryAdapter;
+    private static final Long PRODUCT_ID = 35455L;
+    private static final Long BRAND_ID = 1L;
+    private static final LocalDateTime START_DATE = LocalDateTime.parse("2020-06-14T00:00:00");
+    private static final LocalDateTime END_DATE = LocalDateTime.parse("2020-12-31T23:59:59");
+    private static final double PRICE_VALUE = 35.5;
 
-    @Mock
+    /**
+     * The Price repository adapter.
+     */
+    @Autowired
+    PriceRepositoryAdapter priceRepositoryAdapter;
+
+    @MockBean
     private PriceMORepository priceMORepository;
 
-    @Mock
+    @MockBean
     private PriceMapper priceMapper;
 
     private LocalDateTime applicationDate;
@@ -38,8 +51,30 @@ class PriceRepositoryAdapterUnitTest {
      */
     @BeforeEach
     void setUp() {
-        priceRepositoryAdapter = new PriceRepositoryAdapter(priceMORepository, priceMapper);
         applicationDate = LocalDateTime.of(2020, 6, 14, 10, 0);
+    }
+
+    /**
+     * Test retry mechanism.
+     */
+    @Test
+    void testRetryMechanism() {
+        Long productId = 35455L;
+        Long brandId = 1L;
+        var applicationDate = LocalDateTime.of(2020, 6, 14, 10, 0);
+
+        when(priceMORepository.findByBrandIdAndProductIdAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                anyLong(), anyLong(), any(), any()))
+                .thenThrow(new RuntimeException("Database connection error"));
+
+        var exception = assertThrows(CompletionException.class, () ->
+            priceRepositoryAdapter.getPrices(productId, brandId, applicationDate).join());
+
+        verify(priceMORepository, times(3)).findByBrandIdAndProductIdAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                brandId, productId, applicationDate, applicationDate);
+
+        Throwable cause = exception.getCause();
+        assertTrue(cause instanceof RuntimeException);
     }
 
     /**
@@ -48,41 +83,87 @@ class PriceRepositoryAdapterUnitTest {
     @Test
     void testGetPricesFromRepositoryReturnsMappedPrices() {
 
-        var priceMO = PriceMO.builder()
-                .productId(35455L)
-                .brand(BrandMO.builder().id(1L).brandName("ZARA").build())
-                .startDate(LocalDateTime.parse("2020-06-14T00:00:00"))
-                .endDate(LocalDateTime.parse("2020-12-31T23:59:59"))
-                .priceList(1L)
-                .price(35.5)
-                .priority(0)
-                .currency("EUR")
-                .build();
+        var priceMO = createPriceMO();
 
-        var price = Price.builder()
-                .productId(35455L)
-                .brandId(1L)
-                .startDate(LocalDateTime.parse("2020-06-14T00:00:00"))
-                .endDate(LocalDateTime.parse("2020-12-31T23:59:59"))
-                .priceList(1L)
-                .price(35.5)
-                .priority(0)
-                .currency("EUR")
-                .build();
+        var expectedPrice = createExpectedPrice();
 
         when(priceMORepository.findByBrandIdAndProductIdAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
                 1L, 35455L, applicationDate, applicationDate))
                 .thenReturn(List.of(priceMO));
         when(priceMapper.mapPriceMOToPrice(priceMO))
-                .thenReturn(price);
+                .thenReturn(expectedPrice);
 
-        var result = priceRepositoryAdapter.getPrices(35455L, 1L, applicationDate);
+        var result = priceRepositoryAdapter.getPrices(35455L, 1L, applicationDate).join();
 
         assertEquals(1, result.size());
-        assertEquals(price, result.get(0));
+        assertEquals(expectedPrice, result.get(0));
         verify(priceMORepository, times(1)).
                 findByBrandIdAndProductIdAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
                         1L, 35455L, applicationDate, applicationDate);
         verify(priceMapper, times(1)).mapPriceMOToPrice(priceMO);
+    }
+
+    /**
+     * Test cache stores prices.
+     */
+    @Test
+    void testCacheStoresPrices() {
+        Long productId = 35455L;
+        Long brandId = 1L;
+        var applicationDate = LocalDateTime.of(2020, 6, 14, 10, 0);
+
+        var priceMO = createPriceMO();
+
+        var expectedPrice = createExpectedPrice();
+
+        when(priceMORepository.findByBrandIdAndProductIdAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                brandId, productId, applicationDate, applicationDate))
+                .thenReturn(List.of(priceMO));
+        when(priceMapper.mapPriceMOToPrice(priceMO))
+                .thenReturn(expectedPrice);
+
+        var result = priceRepositoryAdapter.getPrices(productId, brandId, applicationDate).join();
+        assertEquals(1, result.size());
+        assertEquals(expectedPrice, result.get(0));
+
+        verify(priceMORepository, times(1)).findByBrandIdAndProductIdAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                brandId, productId, applicationDate, applicationDate);
+
+        when(priceMORepository.findByBrandIdAndProductIdAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                brandId, productId, applicationDate, applicationDate))
+                .thenReturn(List.of(priceMO));
+
+        var cachedResult = priceRepositoryAdapter.getPrices(productId, brandId, applicationDate).join();
+        assertEquals(1, cachedResult.size());
+        assertEquals(expectedPrice, cachedResult.get(0));
+
+        verify(priceMORepository, times(1)).findByBrandIdAndProductIdAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                brandId, productId, applicationDate, applicationDate);
+    }
+
+    private PriceMO createPriceMO() {
+        return PriceMO.builder()
+                .productId(PRODUCT_ID)
+                .brand(BrandMO.builder().id(BRAND_ID).brandName("ZARA").build())
+                .startDate(START_DATE)
+                .endDate(END_DATE)
+                .priceList(1L)
+                .price(PRICE_VALUE)
+                .priority(0)
+                .currency("EUR")
+                .build();
+    }
+
+    private Price createExpectedPrice() {
+        return Price.builder()
+                .productId(PRODUCT_ID)
+                .brandId(BRAND_ID)
+                .startDate(START_DATE)
+                .endDate(END_DATE)
+                .priceList(1L)
+                .price(PRICE_VALUE)
+                .priority(0)
+                .currency("EUR")
+                .build();
     }
 }

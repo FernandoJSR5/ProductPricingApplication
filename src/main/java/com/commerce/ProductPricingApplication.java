@@ -2,11 +2,13 @@ package com.commerce;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cache.annotation.EnableCaching;
 
 /**
  * The type Product pricing application.
  */
 @SpringBootApplication
+@EnableCaching
 public class ProductPricingApplication {
 
     /**

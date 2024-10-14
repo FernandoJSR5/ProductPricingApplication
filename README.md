@@ -56,15 +56,14 @@ Additionally, the following test cases were provided to validate the service:
 
 The project is organized into the following layers:
 
-- **Domain**: Contains domain entities and core business logic. Key classes include `Price` model and `Price` entity.
+- **Domain**: Contains domain entities and core business logic. Key classes include `Price` entity.
 - **Application**: Defines application services and interfaces. This layer includes:
    - `PriceServicePort`: An interface for business operations related to pricing.
    - `PriceRepositoryPort`: An interface for data access, implemented in the `driven` layer.
+   - `PriceServiceUseCase`:  Implements the `PriceServicePort` interface to provide the logic for retrieving applicable prices based on user requests
 - **Driving**: Handles incoming requests and responses. This layer includes REST controllers like `PriceControllerAdapter` that process HTTP requests and return responses.
 - **Driven**: Interacts with external systems, including data access and repository implementations. This layer includes:
    - `PriceMORepository`: A repository implementation that interacts with the H2 in-memory database.
-
-### In-Memory Database
 
 ### In-Memory Database
 
@@ -74,23 +73,39 @@ An in-memory H2 database was used to store the provided example data. The databa
 
 The service exposes a REST endpoint at `/api/v1/prices/applicable` that accepts the aforementioned input parameters and returns the applicable price based on defined rules.
 
+### Resilience and Caching Improvements
+
+- **Resilience Enhancements**: Integrated Resilience4j to implement CircuitBreaker and Retry patterns for improved fault tolerance and reliability.
+- **Caching**: Added CaffeineCacheManager to cache results, reducing the load on the database and improving response times.
+- **Fallback Logic**: Implemented sophisticated fallback mechanisms to handle exceptions gracefully, including differentiating between PriceException and other runtime exceptions.
+
+### API Documentation
+
+Updated the API mustache template to enhance documentation and clarity for users.
+
 ### Tests
 
-- **Unit Tests**: Unit tests were implemented for the controller and service, verifying correct behavior in various scenarios.
-- **Integration Tests**: Integration tests were implemented to ensure all components work together correctly.
+Unit Tests: Unit tests were implemented for the controller and service, verifying correct behavior in various scenarios.
+Integration Tests: Integration tests were implemented to ensure all components work together correctly, including tests for resilience and caching logic.
 
 ### Running the Application
 
 To run the application:
 
-1. Clone the repository.
-2. Run the project using your preferred IDE or by executing the following command:
+1. Clone the repository:
+2. Build the Project:
+    ```bash
+   ./mvnw clean install
+3. Run the project using your preferred IDE or by executing the following command:
    ```bash
    ./mvnw spring-boot:run
-3. Tests can be executed with:
+4. Accessing the H2 Database Console:
+   ```bash
+   http://localhost:8080/h2-console
+5. Tests can be executed with:
    ```bash
    ./mvnw test
 
 ### Expected Results
 
-For each test case, the service should return the correct price, taking into account the priority of the rates and the applicable date range.
+For each test case, the service should return the correct price, taking into account the priority of the rates and the applicable date range. The improvements in resilience and caching should ensure the service handles high loads efficiently while maintaining responsiveness.
