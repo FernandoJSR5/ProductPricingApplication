@@ -14,9 +14,6 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.OffsetDateTime;
 import java.util.concurrent.CompletableFuture;
 
-/**
- * The type Price controller adapter.
- */
 @RestController
 @RequestMapping("/api/v1")
 @AllArgsConstructor
@@ -31,6 +28,6 @@ public class PriceControllerAdapter implements PricesApi {
                                                                                @RequestParam("productId") Long productId,
                                                                                @RequestParam("brandId") Long brandId) {
         return priceServicePort.getApplicablePrice(productId, brandId, applicationDate.toLocalDateTime())
-                .thenApply(price -> ResponseEntity.ok(priceResponseMapper.mapListPriceToPriceResponse(price)));
+                .thenApply(price -> ResponseEntity.ok(priceResponseMapper.toResponse(price)));
     }
 }

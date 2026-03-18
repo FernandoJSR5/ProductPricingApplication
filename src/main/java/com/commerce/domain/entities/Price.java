@@ -5,9 +5,6 @@ import lombok.Data;
 
 import java.time.LocalDateTime;
 
-/**
- * The type Price.
- */
 @Data
 @Builder
 public class Price {

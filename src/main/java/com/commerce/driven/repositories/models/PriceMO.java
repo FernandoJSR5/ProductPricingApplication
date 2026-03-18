@@ -5,9 +5,6 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 
-/**
- * The type Price mo.
- */
 @EqualsAndHashCode(callSuper = false)
 @Data
 @NoArgsConstructor

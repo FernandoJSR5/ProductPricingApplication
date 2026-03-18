@@ -6,9 +6,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * The type Brand mo.
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

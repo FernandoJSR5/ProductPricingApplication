@@ -2,35 +2,26 @@ package com.commerce.driving.controllers.mappers;
 
 import com.commerce.domain.entities.Price;
 import com.commerce.domain.model.PriceResponse;
-import org.springframework.stereotype.Component;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.Named;
 
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
-/**
- * The type Price response mapper.
- */
-@Component
-public class PriceResponseMapper {
+@Mapper(componentModel = "spring")
+public interface PriceResponseMapper {
 
-    /**
-     * Map list price api to price response price response.
-     *
-     * @param price the price
-     * @return the price response
-     */
-    public PriceResponse mapListPriceToPriceResponse(Price price) {
-        return PriceResponse.builder()
-                .price(com.commerce.domain.model.Price.builder()
-                        .productId(price.getProductId())
-                        .priceList(price.getPriceList())
-                        .startDate(OffsetDateTime.of(price.getStartDate(), ZoneOffset.UTC))
-                        .endDate(OffsetDateTime.of(price.getEndDate(), ZoneOffset.UTC))
-                        .price(price.getPrice())
-                        .currency(price.getCurrency())
-                        .brandId(price.getBrandId())
-                        .build())
-                .build();
+    @Mapping(target = "price", source = ".")
+    PriceResponse toResponse(Price price);
 
+    @Mapping(source = "startDate", target = "startDate", qualifiedByName = "toOffsetDateTimeUtc")
+    @Mapping(source = "endDate", target = "endDate", qualifiedByName = "toOffsetDateTimeUtc")
+    com.commerce.domain.model.Price toApiPrice(Price price);
+
+    @Named("toOffsetDateTimeUtc")
+    default OffsetDateTime toOffsetDateTimeUtc(LocalDateTime localDateTime) {
+        return localDateTime == null ? null : OffsetDateTime.of(localDateTime, ZoneOffset.UTC);
     }
 }
