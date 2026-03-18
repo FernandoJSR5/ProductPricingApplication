@@ -66,10 +66,10 @@ class PriceControllerAdapterTest {
             double price) throws Exception {
 
         var dateTime = OffsetDateTime.parse(applicationDate);
-        var expectedPrice = buildPrice(BRAND_ID, startDate, endDate, priceList, price);
+        var expectedPrice = buildPrice(startDate, endDate, priceList, price);
         var expectedResponse = buildExpectedPriceResponse(expectedPrice);
 
-        stubApplicablePrice(dateTime, BRAND_ID, expectedPrice, expectedResponse);
+        stubApplicablePrice(dateTime, expectedPrice, expectedResponse);
 
         performApplicablePriceRequest(applicationDate, PRODUCT_ID.toString(), BRAND_ID.toString())
                 .andExpect(status().isOk())
@@ -102,7 +102,7 @@ class PriceControllerAdapterTest {
     @Test
     @DisplayName("Given invalid brand id when getting applicable price then should return bad request")
     void givenInvalidBrandIdWhenGetApplicablePriceThenShouldReturnBadRequest() throws Exception {
-        performApplicablePriceRequestSync("2020-06-14T10:00:00Z", PRODUCT_ID.toString(), "a")
+        performApplicablePriceRequestSync(PRODUCT_ID.toString())
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value(INVALID_BRAND_ID_MESSAGE));
     }
@@ -128,10 +128,9 @@ class PriceControllerAdapterTest {
     }
 
     private void stubApplicablePrice(OffsetDateTime dateTime,
-                                     Long brandId,
                                      Price expectedPrice,
                                      PriceResponse expectedResponse) {
-        given(priceServicePort.getApplicablePrice(PRODUCT_ID, brandId, LocalDateTime.from(dateTime)))
+        given(priceServicePort.getApplicablePrice(PRODUCT_ID, BRAND_ID, LocalDateTime.from(dateTime)))
                 .willReturn(CompletableFuture.completedFuture(expectedPrice));
         given(priceResponseMapper.toResponse(expectedPrice)).willReturn(expectedResponse);
     }
@@ -146,10 +145,8 @@ class PriceControllerAdapterTest {
         return mockMvc.perform(asyncDispatch(mvcResult));
     }
 
-    private ResultActions performApplicablePriceRequestSync(String applicationDate,
-                                                            String productId,
-                                                            String brandId) throws Exception {
-        return mockMvc.perform(buildApplicablePriceRequest(applicationDate, productId, brandId));
+    private ResultActions performApplicablePriceRequestSync(String productId) throws Exception {
+        return mockMvc.perform(buildApplicablePriceRequest("2020-06-14T10:00:00Z", productId, "a"));
     }
 
     private MockHttpServletRequestBuilder buildApplicablePriceRequest(String applicationDate,
@@ -161,10 +158,10 @@ class PriceControllerAdapterTest {
                 .param("brandId", brandId);
     }
 
-    private Price buildPrice(Long brandId, String startDate, String endDate, Long priceList, double price) {
+    private Price buildPrice(String startDate, String endDate, Long priceList, double price) {
         return Price.builder()
                 .productId(PRODUCT_ID)
-                .brandId(brandId)
+                .brandId(BRAND_ID)
                 .startDate(LocalDateTime.parse(startDate))
                 .endDate(LocalDateTime.parse(endDate))
                 .priceList(priceList)
