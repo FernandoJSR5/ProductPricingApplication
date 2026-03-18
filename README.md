@@ -2,110 +2,267 @@
 
 ## Description
 
-This application is a solution that involves building a REST service in Spring Boot. The application simulates an e-commerce database that manages product prices based on different rate plans and priorities. The service exposes an endpoint that allows querying the final applicable price for a product based on the query date, product ID, and brand ID.
+This application implements a **Spring Boot REST service** that calculates the applicable price of a product based on the application date, product ID, and brand ID.
 
-## PRICES Table
+The service simulates an e-commerce pricing system where multiple price rules may apply to the same product during overlapping time ranges. When this happens, the rule with the **highest priority** is selected.
 
-The database includes a `PRICES` table, which stores information about the applicable rates for products during specific periods. Below is an example of the table's structure:
+The solution follows a **layered architecture inspired by Hexagonal Architecture**, separating domain logic, application use cases, and infrastructure concerns such as persistence, caching, and resilience.
+
+---
+
+# PRICES Table
+
+The database includes a `PRICES` table, which stores pricing rules for products during specific time periods.
 
 | BRAND_ID | START_DATE          | END_DATE            | PRICE_LIST | PRODUCT_ID | PRIORITY | PRICE | CURR |
-|----------|---------------------|---------------------|------------|------------|----------|-------|------|
+| -------- | ------------------- | ------------------- | ---------- | ---------- | -------- | ----- | ---- |
 | 1        | 2020-06-14 00:00:00 | 2020-12-31 23:59:59 | 1          | 35455      | 0        | 35.50 | EUR  |
 | 1        | 2020-06-14 15:00:00 | 2020-06-14 18:30:00 | 2          | 35455      | 1        | 25.45 | EUR  |
 | 1        | 2020-06-15 00:00:00 | 2020-06-15 11:00:00 | 3          | 35455      | 1        | 30.50 | EUR  |
 | 1        | 2020-06-15 16:00:00 | 2020-12-31 23:59:59 | 4          | 35455      | 1        | 38.95 | EUR  |
 
-### Table Fields
+## Table Fields
 
-- **BRAND_ID**: Foreign key identifying the brand (in this case, `1 = ZARA`).
-- **START_DATE**: The start date from which the rate applies.
-- **END_DATE**: The end date until which the rate applies.
-- **PRICE_LIST**: Unique identifier of the applicable rate.
-- **PRODUCT_ID**: Unique identifier of the product.
-- **PRIORITY**: Priority indicator to resolve conflicts when multiple rates apply. The rate with the highest priority is applied.
-- **PRICE**: Final sale price of the product.
-- **CURR**: ISO code of the currency in which the price is expressed.
+* **BRAND_ID**: Foreign key identifying the brand (in this example, `1 = ZARA`).
+* **START_DATE**: Start date when the price rule becomes valid.
+* **END_DATE**: End date when the price rule expires.
+* **PRICE_LIST**: Identifier of the price rule.
+* **PRODUCT_ID**: Product identifier.
+* **PRIORITY**: Determines which rule applies when multiple rules overlap.
+* **PRICE**: Final price to apply.
+* **CURR**: Currency ISO code.
 
-## Test Requirements
+---
 
-The task was to build a **Spring Boot** service that exposes a REST endpoint to query applicable prices based on the following input parameters:
+# Functional Requirements
 
-- **Application Date**: `applicationDate`
-- **Product ID**: `productId`
-- **Brand ID**: `brandId`
+The application exposes a REST endpoint that receives:
 
-The service should return:
+* **Application Date**
+* **Product ID**
+* **Brand ID**
 
-- Product ID (`productId`)
-- Brand ID (`brandId`)
-- Applicable rate (`priceList`)
-- Application dates (`startDate` and `endDate`)
-- Final applicable price (`price`)
+And returns:
 
-Additionally, the following test cases were provided to validate the service:
+* Product ID
+* Brand ID
+* Applicable price list
+* Start date of the rule
+* End date of the rule
+* Final price
 
-1. **Test 1**: Request at 10:00 on June 14th for product `35455` with brand `ZARA`.
-2. **Test 2**: Request at 16:00 on June 14th for product `35455` with brand `ZARA`.
-3. **Test 3**: Request at 21:00 on June 14th for product `35455` with brand `ZARA`.
-4. **Test 4**: Request at 10:00 on June 15th for product `35455` with brand `ZARA`.
-5. **Test 5**: Request at 21:00 on June 16th for product `35455` with brand `ZARA`.
+If multiple pricing rules match the request, the rule with the **highest priority** is selected.
 
-## Implemented Solution
+---
 
-### Project Structure
+# Test Scenarios
 
-The project is organized into the following layers:
+The following test scenarios were provided as part of the challenge:
 
-- **Domain**: Contains domain entities and core business logic. Key classes include `Price` entity.
-- **Application**: Defines application services and interfaces. This layer includes:
-   - `PriceServicePort`: An interface for business operations related to pricing.
-   - `PriceRepositoryPort`: An interface for data access, implemented in the `driven` layer.
-   - `PriceServiceUseCase`:  Implements the `PriceServicePort` interface to provide the logic for retrieving applicable prices based on user requests
-- **Driving**: Handles incoming requests and responses. This layer includes REST controllers like `PriceControllerAdapter` that process HTTP requests and return responses.
-- **Driven**: Interacts with external systems, including data access and repository implementations. This layer includes:
-   - `PriceMORepository`: A repository implementation that interacts with the H2 in-memory database.
+1. Request at **2020-06-14 10:00** for product **35455**, brand **ZARA**
+2. Request at **2020-06-14 16:00**
+3. Request at **2020-06-14 21:00**
+4. Request at **2020-06-15 10:00**
+5. Request at **2020-06-16 21:00**
 
-### In-Memory Database
+The service returns the correct price rule based on date ranges and priority.
 
-An in-memory H2 database was used to store the provided example data. The database is automatically initialized when the application starts.
+---
 
-### Endpoint
+# Architecture
 
-The service exposes a REST endpoint at `/api/v1/prices/applicable` that accepts the aforementioned input parameters and returns the applicable price based on defined rules.
+The application follows a **clean layered architecture inspired by Hexagonal Architecture**.
 
-### Resilience and Caching Improvements
+## Domain Layer
 
-- **Resilience Enhancements**: Integrated Resilience4j to implement CircuitBreaker and Retry patterns for improved fault tolerance and reliability.
-- **Caching**: Added CaffeineCacheManager to cache results, reducing the load on the database and improving response times.
-- **Fallback Logic**: Implemented sophisticated fallback mechanisms to handle exceptions gracefully, including differentiating between PriceException and other runtime exceptions.
+Contains core domain objects and business rules.
 
-### API Documentation
+Key elements:
 
-Updated the API mustache template to enhance documentation and clarity for users.
+* `Price` – Domain entity representing a pricing rule.
 
-### Tests
+The domain layer is independent of frameworks and infrastructure.
 
-Unit Tests: Unit tests were implemented for the controller and service, verifying correct behavior in various scenarios.
-Integration Tests: Integration tests were implemented to ensure all components work together correctly, including tests for resilience and caching logic.
+---
 
-### Running the Application
+## Application Layer
 
-To run the application:
+Defines application use cases and ports.
 
-1. Clone the repository:
-2. Build the Project:
-    ```bash
-   ./mvnw clean install
-3. Run the project using your preferred IDE or by executing the following command:
-   ```bash
-   ./mvnw spring-boot:run
-4. Accessing the H2 Database Console:
-   ```bash
-   http://localhost:8080/h2-console
-5. Tests can be executed with:
-   ```bash
-   ./mvnw test
+Key components:
 
-### Expected Results
+* `PriceServicePort` – Defines business operations related to pricing.
+* `PriceRepositoryPort` – Defines the persistence contract used by the application layer.
+* `PriceServiceUseCase` – Implements business logic to retrieve the applicable price.
 
-For each test case, the service should return the correct price, taking into account the priority of the rates and the applicable date range. The improvements in resilience and caching should ensure the service handles high loads efficiently while maintaining responsiveness.
+This layer orchestrates domain logic and communicates with infrastructure through ports.
+
+---
+
+## Driving Layer
+
+Handles incoming HTTP requests.
+
+Components include:
+
+* `PriceControllerAdapter`
+
+Responsibilities:
+
+* Receives REST requests
+* Validates input parameters
+* Delegates to the application use case
+* Returns the response DTO
+
+---
+
+## Driven Layer
+
+Handles infrastructure concerns such as persistence, caching, and resilience.
+
+Components include:
+
+* `PriceRepositoryAdapter`
+  Adapter implementing the `PriceRepositoryPort` defined in the application layer.
+
+* `PriceRepositoryResilientAdapter`
+  Component responsible for applying resilience patterns such as retry, caching, and fallback when accessing the database.
+
+* `PriceMORepository`
+  Spring Data JPA repository that interacts with the H2 database.
+
+This separation ensures resilience and infrastructure concerns remain isolated from the application and domain layers.
+
+---
+
+# Persistence
+
+The application uses:
+
+* **Spring Data JPA**
+* **H2 in-memory database**
+
+The database is automatically initialized with Flyway migrations during application startup.
+
+---
+
+# Resilience and Caching
+
+To improve reliability and performance, the repository layer integrates **Resilience4j** and **Caffeine caching**.
+
+## Retry
+
+The repository infrastructure applies **Resilience4j Retry** to automatically retry database operations when transient failures occur.
+
+## Fallback
+
+If all retry attempts fail, a **fallback mechanism** throws a `FallbackPriceException`, allowing the application to return a controlled failure instead of propagating low-level exceptions.
+
+## Caching
+
+Caffeine caching is used to store repository results, reducing repeated database queries for identical requests and improving response times.
+
+All resilience and caching logic is encapsulated in the infrastructure layer, keeping the domain and application layers clean.
+
+---
+
+# API Endpoint
+
+GET /api/v1/prices/applicable
+
+## Request Parameters
+
+| Parameter       | Description                           |
+| --------------- | ------------------------------------- |
+| applicationDate | Date when the price should be applied |
+| productId       | Product identifier                    |
+| brandId         | Brand identifier                      |
+
+## Response Example
+
+```json
+{
+  "productId": 35455,
+  "brandId": 1,
+  "priceList": 2,
+  "startDate": "2020-06-14T15:00:00",
+  "endDate": "2020-06-14T18:30:00",
+  "price": 25.45
+}
+```
+
+---
+
+# Testing
+
+The project includes both **unit tests** and **integration tests**.
+
+## Unit Tests
+
+Unit tests validate individual components such as:
+
+* Controllers
+* Use cases
+* Repository adapters
+
+Mocks are used to isolate dependencies.
+
+## Integration Tests
+
+Integration tests verify:
+
+* Database access
+* Retry behavior
+* Caching functionality
+* End-to-end interaction between layers
+
+---
+
+# Running the Application
+
+## 1. Clone the repository
+
+git clone <repository-url>
+
+## 2. Build the project
+
+./mvnw clean install
+
+## 3. Run the application
+
+./mvnw spring-boot:run
+
+---
+
+# H2 Database Console
+
+The H2 console is available at:
+
+http://localhost:8080/h2-console
+
+Configuration:
+
+JDBC URL: jdbc:h2:mem:testdb
+User: sa
+Password: (empty)
+
+---
+
+# Running Tests
+
+Execute all tests with:
+
+./mvnw test
+
+---
+
+# Expected Behavior
+
+The service returns the correct price rule according to:
+
+* the application date
+* the product ID
+* the brand ID
+* the priority of overlapping pricing rules
+
+The resilience and caching mechanisms improve stability and performance when interacting with the persistence layer.
